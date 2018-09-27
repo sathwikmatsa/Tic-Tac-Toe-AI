@@ -130,7 +130,6 @@ def random_ai(board, player):
 		return random_ai(board, player)
 
 def find_winning_moves_ai(board, player):
-	blank = -1
 
 	# check rows
 	for i in range(3):
@@ -191,6 +190,99 @@ def find_winning_moves_ai(board, player):
 
 	return random_ai(board, player)
 
+def finds_winning_and_losing_moves_ai(board, player):
+
+	losing_x = -1
+	losing_y = -1
+
+	# check rows
+	for i in range(3):
+		count = 0
+		loss_chance_count = 0
+		has_blank_spot = False
+		has_chance = True
+		for j in range(3):
+			if board[i][j] == -1*player:
+				has_chance = False
+				loss_chance_count+=1
+			elif board[i][j] == player:
+				count+=1
+			else:
+				has_blank_spot = True
+				blank = j
+		if count == 2 and has_chance:
+			return [i, blank]
+		elif loss_chance_count == 2 and has_blank_spot:
+			losing_x = i
+			losing_y = blank
+
+	# check cols
+	for j in range(3):
+		count = 0
+		loss_chance_count = 0
+		has_blank_spot = False
+		has_chance = True
+		for i in range(3):
+			if board[i][j] == -1*player:
+				has_chance = False
+				loss_chance_count+=1
+			elif board[i][j] == player:
+				count+=1
+			else:
+				has_blank_spot = True
+				blank = i
+		if count == 2 and has_chance:
+			return [blank, j]
+		elif loss_chance_count == 2 and has_blank_spot:
+			losing_x = blank
+			losing_y = j
+
+
+	# check diagonals
+	count = 0
+	loss_chance_count = 0
+	has_blank_spot = False
+	has_chance = True
+	for i in range(3):
+		if board[i][i] == -1*player:
+			has_chance = False
+			loss_chance_count+=1
+		elif board[i][i] == player:
+			count+=1
+		else:
+			has_blank_spot = True
+			blank = i
+	if count == 2 and has_chance:
+		return [blank, blank]
+	elif loss_chance_count == 2 and has_blank_spot:
+		losing_x = blank
+		losing_y = blank
+
+
+	count = 0
+	loss_chance_count = 0
+	has_blank_spot = False
+	has_chance = True
+	for i in range(3):
+		if board[i][2-i] == -1*player:
+			has_chance = False
+			loss_chance_count+=1
+		elif board[i][2-i] == player:
+			count+=1
+		else:
+			has_blank_spot = True
+			blank = i
+	if count == 2 and has_chance:
+		return [blank, 2-blank]
+	elif loss_chance_count == 2 and has_blank_spot:
+		losing_x = blank
+		losing_y = 2-blank
+
+	if losing_x != -1:
+		return [losing_x, losing_y] #BLOCK
+
+	return random_ai(board, player)
+
 
 def main():
 	new_board()
@@ -206,7 +298,7 @@ def main():
 			# 	if update_board(x, y, player):
 			# 		player*=-1
 
-		x, y = random_ai(board, player) if player == 1 else find_winning_moves_ai(board, player)
+		x, y = finds_winning_and_losing_moves_ai(board, player) if player == 1 else find_winning_moves_ai(board, player)
 		if update_board(x, y, player):
 			player*=-1
 
