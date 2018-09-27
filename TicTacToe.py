@@ -1,4 +1,4 @@
-import pygame
+import pygame, random
 from pygame.locals import *
 
 pygame.init()
@@ -56,7 +56,7 @@ def is_draw():
 		return True
 	return False
 
-def is_valid_move(x, y):
+def is_valid_move(x, y, board):
 	return board[x][y] == 0
 
 def render_board():
@@ -71,13 +71,11 @@ def render_board():
 
 def update_board( x, y, playerID):
 	global board
-	col = x//120
-	row = y//120
-	if is_valid_move(row, col):
-		board[row][col] = playerID
+	if is_valid_move(x, y, board):
+		board[x][y] = playerID
 		textSurf = BASICFONT.render("X" if playerID == 1 else "O", True, BLACK)
 		textRect = textSurf.get_rect()
-		textRect.center = pygame.Rect(120*col+20 ,120*row+20 , 100, 100).center
+		textRect.center = pygame.Rect(120*y+20 ,120*x+20 , 100, 100).center
 		DISPLAYSURFACE.blit(textSurf, textRect)
 		pygame.display.update(textRect)
 		return True
@@ -122,6 +120,15 @@ def new_game_requested():
 			elif event.type == KEYDOWN:
 				return True
 
+## AI ##
+def random_ai(board, player):
+	x = random.choice([0,1,2])
+	y = random.choice([0,1,2])
+	if is_valid_move(x, y, board):
+		return [x, y]
+	else:
+		return random_ai(board, player)
+
 
 def main():
 	new_board()
@@ -132,10 +139,14 @@ def main():
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
-			elif event.type == MOUSEBUTTONDOWN:
-				x, y = event.pos
-				if update_board(x, y, player):
-					player*=-1
+			# elif event.type == MOUSEBUTTONDOWN:
+			# 	x, y = event.pos
+			# 	if update_board(x, y, player):
+			# 		player*=-1
+
+		x, y = random_ai(board, player)
+		if update_board(x, y, player):
+			player*=-1
 
 		FPSCLOCK.tick(30)
 
