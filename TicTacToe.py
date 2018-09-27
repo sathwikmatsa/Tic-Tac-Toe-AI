@@ -57,7 +57,7 @@ def is_draw():
 	return False
 
 def is_valid_move(x, y, board):
-	return board[x][y] == 0
+	return x>=0 and x<3 and y>=0 and y<3 and (board[x][y] == 0)
 
 def render_board():
 	DISPLAYSURFACE.fill(BLACK)
@@ -129,6 +129,68 @@ def random_ai(board, player):
 	else:
 		return random_ai(board, player)
 
+def find_winning_moves_ai(board, player):
+	blank = -1
+
+	# check rows
+	for i in range(3):
+		count = 0
+		has_chance = True
+		for j in range(3):
+			if board[i][j] == -1*player:
+				has_chance = False
+				break
+			if board[i][j] == player:
+				count+=1
+			else:
+				blank = j
+		if count == 2 and has_chance:
+			return [i, blank]
+
+	# check cols
+	for j in range(3):
+		count = 0
+		has_chance = True
+		for i in range(3):
+			if board[i][j] == -1*player:
+				has_chance = False
+				break
+			if board[i][j] == player:
+				count+=1
+			else:
+				blank = i
+		if count == 2 and has_chance:
+			return [blank, j]
+
+	# check diagonals
+	count = 0
+	has_chance = True
+	for i in range(3):
+		if board[i][i] == -1*player:
+			has_chance = False
+			break
+		elif board[i][i] == player:
+			count+=1
+		else:
+			blank = i
+	if count == 2 and has_chance:
+		return [blank, blank]
+
+	count = 0
+	has_chance = True
+	for i in range(3):
+		if board[i][2-i] == -1*player:
+			has_chance = False
+			break
+		elif board[i][2-i] == player:
+			count+=1
+		else:
+			blank = i
+	if count == 2 and has_chance:
+		return [blank, 2-blank]
+
+	return random_ai(board, player)
+
 
 def main():
 	new_board()
@@ -144,7 +206,7 @@ def main():
 			# 	if update_board(x, y, player):
 			# 		player*=-1
 
-		x, y = random_ai(board, player)
+		x, y = random_ai(board, player) if player == 1 else find_winning_moves_ai(board, player)
 		if update_board(x, y, player):
 			player*=-1
 
