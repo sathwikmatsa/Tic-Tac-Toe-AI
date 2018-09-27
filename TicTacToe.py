@@ -120,6 +120,19 @@ def new_game_requested():
 			elif event.type == KEYDOWN:
 				return True
 
+
+def human_player(board, player):
+	while True:
+		for event in pygame.event.get():
+			if event.type == QUIT:
+				return
+			elif event.type == MOUSEBUTTONDOWN:
+				x, y = event.pos
+				x = x//120
+				y = y//120
+				return [y,x]
+
+
 ## AI ##
 def random_ai(board, player):
 	x = random.choice([0,1,2])
@@ -293,12 +306,8 @@ def main():
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
-			# elif event.type == MOUSEBUTTONDOWN:
-			# 	x, y = event.pos
-			# 	if update_board(x, y, player):
-			# 		player*=-1
 
-		x, y = finds_winning_and_losing_moves_ai(board, player) if player == 1 else find_winning_moves_ai(board, player)
+		x, y = finds_winning_and_losing_moves_ai(board, player) if player == 1 else human_player(board, player)
 		if update_board(x, y, player):
 			player*=-1
 
