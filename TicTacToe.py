@@ -7,15 +7,14 @@ BASICFONT = pygame.font.Font(None ,120)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
+AI_PLAYER = None
 
 ## board functions ##
-board = [[0,0,0],[0,0,0],[0,0,0]]
 
 def new_board():
-	global board
-	board = [[0,0,0],[0,0,0],[0,0,0]]
+	return ((0,0,0),(0,0,0),(0,0,0))
 
-def get_winner():
+def get_winner(board):
 	# check rows
 	for i in range(3):
 		if abs(sum(board[i])) == 3:
@@ -42,17 +41,25 @@ def get_winner():
 	if abs(count) == 3:
 		return int(count/3), 'd', 1
 
-	# no winner
-	return [0]
+	count = 0
+	for i in range(3):
+		for j in range(3):
+			if board[i][j] == 0:
+				count+=1
+	if count == 0:
+		return [0] # no winner
 
-def is_draw():
+	# game incomplete
+	return [None]
+
+def is_draw(board):
 	count = 0
 	for i in range(3):
 		for j in range(3):
 			if board[i][j] == 0:
 				count+=1
 
-	if count == 0 and get_winner()[0] == 0:
+	if count == 0 and get_winner(board)[0] == 0:
 		return True
 	return False
 
@@ -69,23 +76,26 @@ def render_board():
 
 	pygame.display.flip()
 
-def update_board( x, y, playerID):
-	global board
-	if is_valid_move(x, y, board):
-		board[x][y] = playerID
-		textSurf = BASICFONT.render("X" if playerID == 1 else "O", True, BLACK)
-		textRect = textSurf.get_rect()
-		textRect.center = pygame.Rect(120*y+20 ,120*x+20 , 100, 100).center
-		DISPLAYSURFACE.blit(textSurf, textRect)
-		pygame.display.update(textRect)
-		return True
-	return False
+def make_move(board, move, player):
+	new_board = list(board)
+	new_board = [list(row) for row in new_board]
+	new_board[move[0]][move[1]] = player
+	new_board = [tuple(row) for row in new_board]
+	return tuple(new_board)
 
-def display_result():
-	if is_draw():
+def update_board(board, x, y, playerID):
+	textSurf = BASICFONT.render("X" if playerID == 1 else "O", True, BLACK)
+	textRect = textSurf.get_rect()
+	textRect.center = pygame.Rect(120*y+20 ,120*x+20 , 100, 100).center
+	DISPLAYSURFACE.blit(textSurf, textRect)
+	pygame.display.update(textRect)
+	return make_move(board, [x,y], playerID)
+
+def display_result(board):
+	if is_draw(board):
 		result = "DRAW!"
 	else:
-		winner, collection_type, collection_index = get_winner()
+		winner, collection_type, collection_index = get_winner(board)
 		result = "PLAYER " + ("1 " if winner == 1 else "2 ") + "WINS!"
 		if collection_type == 'r':
 			pygame.draw.line(DISPLAYSURFACE, RED, (20,20*(1+collection_index) + 50*(1+2*collection_index)), (360,20*(1+collection_index) + 50*(1+2*collection_index)), 25)
@@ -125,12 +135,13 @@ def human_player(board, player):
 	while True:
 		for event in pygame.event.get():
 			if event.type == QUIT:
-				return
+				return [None, None]
 			elif event.type == MOUSEBUTTONDOWN:
 				x, y = event.pos
 				x = x//120
 				y = y//120
-				return [y,x]
+				if is_valid_move(y, x, board):
+					return [y,x]
 
 
 ## AI ##
@@ -296,28 +307,75 @@ def finds_winning_and_losing_moves_ai(board, player):
 
 	return random_ai(board, player)
 
+## Perfect AI ##
+def get_legal_moves(board):
+	moves = []
+	for i in range(3):
+		for j in range(3):
+			if board[i][j] == 0:
+				moves.append([i,j])
 
-def main():
-	new_board()
+	return moves
+
+def minimax_score(board, player, ai_player):
+	w = get_winner(board)[0]
+	if w == ai_player:
+		return 10
+	elif w == 0:
+		return 0
+	elif w == -1*ai_player:
+		return -10
+
+	scores = []
+	legal_moves = get_legal_moves(board)
+	for move in legal_moves:
+		new_board = make_move(board, move, player)
+		scores.append(minimax_score(new_board, -1*player, ai_player))
+
+	if player == ai_player:
+		return max(scores)
+	else:
+		return min(scores)
+
+def minimax_ai(board, player):
+	legal_moves = get_legal_moves(board)
+	max_score = -20
+	optimal_move = [None, None]
+
+	for move in legal_moves:
+		new_board = make_move(board, move, player)
+		score = minimax_score(new_board, -1*player, AI_PLAYER)
+		if score > max_score:
+			max_score = score
+			optimal_move = move
+
+	return optimal_move
+
+def play():
+	global AI_PLAYER
+	AI_PLAYER = -1
+	board = new_board()
 	FPSCLOCK = pygame.time.Clock()
 	player = 1
 	render_board()
-	while not is_draw() and get_winner()[0] == 0:
+	while not is_draw(board) and get_winner(board)[0] in [0,None]:
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				return
 
-		x, y = finds_winning_and_losing_moves_ai(board, player) if player == 1 else human_player(board, player)
-		if update_board(x, y, player):
-			player*=-1
+		x, y = finds_winning_and_losing_moves_ai(board, player) if player == 1 else minimax_ai(board, player)
+		if x == None:
+			return
+		board =  update_board(board, x, y, player)
+		player*=-1
 
 		FPSCLOCK.tick(30)
 
-	display_result()
+	display_result(board)
 	if new_game_requested():
-		main()
+		play()
 
 
 if __name__ == '__main__':
-	main()
+	play()
 	pygame.quit()
