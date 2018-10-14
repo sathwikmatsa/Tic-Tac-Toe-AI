@@ -331,22 +331,31 @@ def minimax_score(board, player, ai_player):
 	for move in legal_moves:
 		new_board = make_move(board, move, player)
 		scores.append(minimax_score(new_board, -1*player, ai_player))
+		#modified alpha - beta purnning 
+		if player == ai_player :
+			if scores[-1] == 10 :
+				return scores[-1]
+		else :
+			if scores[-1] == -10 :
+				return scores[-1]
 
 	if player == ai_player:
-		return max(scores)
+		return max(scores) 
 	else:
 		return min(scores)
 
 def minimax_ai(board, player):
 	legal_moves = get_legal_moves(board)
-	max_score = -20
+	min_score = -10 
+	max_score =  10
 	optimal_move = [None, None]
 
 	for move in legal_moves:
 		new_board = make_move(board, move, player)
 		score = minimax_score(new_board, -1*player, AI_PLAYER)
-		if score > max_score:
-			max_score = score
+		if score == max_score:
+			return	move
+		elif score > min_score :
 			optimal_move = move
 
 	return optimal_move
